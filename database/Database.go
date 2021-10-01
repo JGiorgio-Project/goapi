@@ -7,7 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-// DbConnection grobal
+// DbConnection global
 var DbConnection *sql.DB
 
 func GetDb() (*sql.DB, error) {
