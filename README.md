@@ -1,2 +1,3 @@
 # goapi
-First REST API coded in go with MVC pattern 
+API in Golang, created to learn the Go language by trying to approach the REST standard. 
+MVC pattern 
