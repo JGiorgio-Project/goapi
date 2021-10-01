@@ -11,10 +11,15 @@ import (
 var DbConnection *sql.DB
 
 func GetDb() (*sql.DB, error) {
-	// Capture connection properties.
-	dns := "db_user:db_password@tcp(localhost:3306)/db_name"
+	//Connection properties.
+	const user = "***"
+	const password = "***"
+	const dbName = "***"
 
-	// Get a database handle.
+	//Make DNS
+	dns := user + ":" + password + "@tcp(localhost:3306)/" + dbName
+
+	//Get a database handle.
 	var err error
 	DbConnection, err = sql.Open("mysql", dns)
 	if err != nil {
