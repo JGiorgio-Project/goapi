@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"strconv"
 	"time"
@@ -43,29 +44,15 @@ func GetBooks() ([]model.Book, error) {
 
 //Get Single Book
 func GetBook(id string) (model.Book, error) {
-
-	rows, err := db.Query("SELECT ID, Isbn, Title, Author FROM books WHERE id=?", id)
-	if err != nil {
-		return model.Book{}, err
-	}
-	defer rows.Close()
-
-	// An book slice to hold data from returned rows.
-	var books []model.Book
-
-	// Loop through rows, using Scan to assign column data to struct fields.
-	for rows.Next() {
-		var book model.Book
-		if err := rows.Scan(&book.ID, &book.Isbn, &book.Title,
-			&book.Author); err != nil {
-			return book, err
+	var book model.Book
+	// Query for a value based on a single row.
+	if err := db.QueryRow("SELECT ID, Isbn, Title, Author FROM books WHERE id=?", id).Scan(&book.ID, &book.Isbn, &book.Title, &book.Author); err != nil {
+		if err == sql.ErrNoRows {
+			return model.Book{}, err
 		}
-		books = append(books, book)
-	}
-	if err = rows.Err(); err != nil {
 		return model.Book{}, err
 	}
-	return books[0], nil
+	return book, nil
 }
 
 //Create Book
@@ -96,7 +83,7 @@ func CreateBook(book model.Book) (model.Book, error) {
 }
 
 //Update Book
-func UpdateBook(book model.Book) (model.Book, error) {
+func UpdateBook(id string, book model.Book) (model.Book, error) {
 	query := "UPDATE books SET Isbn = ?, Title = ?, Author = ? WHERE ID = ?"
 	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelfunc()
@@ -107,7 +94,7 @@ func UpdateBook(book model.Book) (model.Book, error) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, book.Isbn, book.Title, book.Author, book.ID)
+	_, err = stmt.ExecContext(ctx, book.Isbn, book.Title, book.Author, id)
 	if err != nil {
 		log.Printf("Error %s when executing SQL statement", err)
 		return model.Book{}, err
