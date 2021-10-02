@@ -15,10 +15,12 @@ func GetBooks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application.json")
 	books, err := dao.GetBooks()
 	if err == nil {
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(books)
 		return
 	} else {
 		log.Println("ERequest error", err)
+		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(&model.Book{})
 	}
 
@@ -31,11 +33,13 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 	book, err := dao.GetBook(param["id"])
 
 	if err == nil {
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(book)
 		return
 	} else {
 		log.Println("ERequest error", err)
-		json.NewEncoder(w).Encode(&model.Book{})
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(book)
 	}
 
 }
@@ -44,29 +48,52 @@ func GetBook(w http.ResponseWriter, r *http.Request) {
 func CreateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application.json")
 	var book model.Book
-	_ = json.NewDecoder(r.Body).Decode(&book)
-	book, err := dao.CreateBook(book)
-	if err != nil {
-		log.Println("ERequest error", err)
+	err2 := json.NewDecoder(r.Body).Decode(&book)
+	if err2 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("ERequest error", err2)
 		json.NewEncoder(w).Encode(&model.Book{})
-	} else {
+		return
+	}
+	book, err := dao.CreateBook(book)
+	if err == nil {
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(book)
 		return
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("ERequest error", err)
+		json.NewEncoder(w).Encode(&model.Book{})
 	}
 }
 
 //Update Book
 func UpdateBook(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application.json")
+	param := mux.Vars(r) //Get params
 	var book model.Book
-	_ = json.NewDecoder(r.Body).Decode(&book)
-	book, err := dao.UpdateBook(book)
-	if err != nil {
-		log.Println("Request error", err)
+	err2 := json.NewDecoder(r.Body).Decode(&book)
+	if err2 != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("ERequest error", err2)
 		json.NewEncoder(w).Encode(&model.Book{})
-	} else {
+		return
+	}
+	if param["id"] != book.ID {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("ERequest error", err2)
+		json.NewEncoder(w).Encode(&model.Book{})
+		return
+	}
+	book, err := dao.UpdateBook(param["id"], book)
+	if err == nil {
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(book)
 		return
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("Request error", err)
+		json.NewEncoder(w).Encode(&model.Book{})
 	}
 }
 
@@ -81,5 +108,6 @@ func DeleteBook(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		log.Println("ERequest error", err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 }
